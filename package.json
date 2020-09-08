@@ -9,7 +9,7 @@
   "license": "MIT",
   "scripts": {
     "start": "NODE_ENV=development ./node_modules/.bin/ts-node devServer.ts",
-    "build": "./node_modules/.bin/tsc",
+    "build": "rm -rf dist && ./node_modules/.bin/tsc",
     "docs": "./node_modules/.bin/typedoc"
   },
   "devDependencies": {
