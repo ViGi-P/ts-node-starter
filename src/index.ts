@@ -1,6 +1,10 @@
 import { bang, doubleNum } from "./bang";
 import { innerFunc } from "./nested";
 
+if(process.env.NODE_ENV === "development") {
+  console.log(`${process.env.NODE_ENV} mode`);
+}
+
 type Action = ReturnType<typeof doubleNum> | { readonly type: "RESET_COUNT" };
 
 function func(param: Action): string {
