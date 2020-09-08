@@ -1,0 +1,17 @@
+{
+  "out": "./docs",
+  "readme": "none",
+  "includes": "./src",
+  "exclude": [
+    "**/setupTests.ts",
+    "**/__tests__/**/*",
+    "**/__fixtures__/**/*",
+    "**/constants/*",
+    "**/mappers/*",
+    "**/utils/*"
+  ],
+  "mode": "file",
+  "excludeExternals": true,
+  "stripInternal": true,
+  "excludePrivate": true
+}
