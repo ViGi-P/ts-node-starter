@@ -59,12 +59,12 @@ function makeSubscription(
     if (!resp.is_fresh_instance) {
       if (!isExecuting) {
         console.log("");
-        console.log("Files changed. Restarting...");
+        console.log("\x1b[36m%s", "Files changed. Restarting...");
         console.log("\x1b[97m%s\x1b[37m", "");
       }
     } else {
       console.log("Subscribed to file changes in ./src");
-      console.log("Executing...");
+      console.log("\x1b[36m%s", "Executing...");
       console.log("\x1b[97m%s\x1b[37m", "");
     }
 
