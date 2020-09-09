@@ -23,7 +23,7 @@ function devServerStart() {
 
   tsNode.on("close", (code) => {
     if (isExecuting) {
-      console.log("");
+      console.log("\x1b[0m%s\x1b[0m", "");
       console.log(`Exited with code ${code}`);
     }
     isExecuting = false;
@@ -60,12 +60,12 @@ function makeSubscription(
       if (!isExecuting) {
         console.log("");
         console.log("Files changed. Restarting...");
-        console.log("");
+        console.log("\x1b[97m%s\x1b[37m", "");
       }
     } else {
       console.log("Subscribed to file changes in ./src");
       console.log("Executing...");
-      console.log("");
+      console.log("\x1b[97m%s\x1b[37m", "");
     }
 
     isExecuting = true;
