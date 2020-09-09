@@ -3,7 +3,9 @@ import { spawn } from "child_process";
 
 const client = new watchman.Client();
 const devServerSubscription = "dev_server_subscription";
-let isUpdating = false;
+const devSubState = "dev_subscription_state";
+let isExecuting = false;
+let isCleaningUp = false;
 
 function devServerStart() {
   const tsNode = spawn(
@@ -12,7 +14,7 @@ function devServerStart() {
   );
 
   tsNode.stdout.on("data", (data) => {
-    if (isUpdating) process.stdout.write(`${data}`);
+    if (isExecuting) process.stdout.write(`${data}`);
   });
 
   tsNode.stderr.on("data", (data) => {
@@ -20,12 +22,11 @@ function devServerStart() {
   });
 
   tsNode.on("close", (code) => {
-    if (isUpdating) {
-      console.log("––––––––––––––––––––––––––––––––––––––––––––––––––");
+    if (isExecuting) {
+      console.log("");
       console.log(`Exited with code ${code}`);
-      console.log("––––––––––––––––––––––––––––––––––––––––––––––––––");
     }
-    isUpdating = false;
+    isExecuting = false;
   });
 }
 
@@ -35,6 +36,7 @@ function makeSubscription(
   relative_path: string | undefined,
 ) {
   const sub = {
+    defer: [devSubState],
     expression: ["dirname", "src"],
     fields: ["name", "size", "mtime_ms", "exists", "type"],
     ...(relative_path ? { relative_root: relative_path } : {}),
@@ -44,7 +46,7 @@ function makeSubscription(
     ["subscribe", watch, devServerSubscription, sub],
     (error, resp) => {
       if (error) {
-        console.error("Failed to subscribe: ", error);
+        console.error("Failed to subscribe:", error);
         return;
       }
       console.log(`Subscription added: ${resp.subscribe}`);
@@ -54,30 +56,34 @@ function makeSubscription(
   client.on("subscription", (resp) => {
     if (resp.subscription !== devServerSubscription) return;
 
-    isUpdating = true;
-
     if (!resp.is_fresh_instance) {
-      console.group("File changed:");
-      resp.files.forEach(function (file: any) {
-        console.log(`${file.name}-${+file.mtime_ms}`);
-      });
-      console.groupEnd();
-      console.log("––––––––––––––––––––––––––––––––––––––––––––––––––");
+      if (!isExecuting) {
+        console.log("");
+        console.log("Files changed. Restarting...");
+        console.log("");
+      }
     } else {
-      console.log("––––––––––––––––––––––––––––––––––––––––––––––––––");
       console.log("Subscribed to file changes in ./src");
-      console.log("––––––––––––––––––––––––––––––––––––––––––––––––––");
+      console.log("Executing...");
+      console.log("");
     }
 
+    isExecuting = true;
     devServerStart();
   });
 }
 
-function safeExit(successFlags: any[]) {
-  if (successFlags.every((flag) => flag === true)) process.exit(0);
+function safeExit(client: watchman.Client, successFlags: any[]) {
+  if (successFlags.every((flag) => flag === true)) {
+    client.end();
+    process.exit(0);
+  }
 }
 
 function cleanUpServer(this: watchman.Client, event: string) {
+  if (isCleaningUp) return;
+
+  isCleaningUp = true;
   const cleanupSuccessFlags: [
     unsubscribeSuccess: boolean,
     watchDelSuccess: boolean,
@@ -88,23 +94,23 @@ function cleanUpServer(this: watchman.Client, event: string) {
     ["unsubscribe", `${__dirname}`, devServerSubscription],
     (error, resp) => {
       if (error) {
-        console.error("Failed to unsubscribe: ", error);
+        console.error("Failed to unsubscribe:", error);
         return;
       }
       console.log(`Unsubscribed: ${resp.unsubscribe}`);
       cleanupSuccessFlags[0] = true;
-      safeExit(cleanupSuccessFlags);
+      safeExit(this, cleanupSuccessFlags);
     },
   );
 
   this.command(["watch-del-all"], (err, res) => {
     if (err) {
-      console.error(err);
+      console.error("Failed to delete watch:", err);
       return;
     }
     console.log(`Watch deleted: ${res.roots}`);
     cleanupSuccessFlags[1] = true;
-    safeExit(cleanupSuccessFlags);
+    safeExit(this, cleanupSuccessFlags);
   });
 }
 
@@ -126,7 +132,9 @@ client.capabilityCheck(
         }
 
         console.clear();
-        if ("warning" in resp) console.log("warning:", resp.warning);
+        if ("warning" in resp) {
+          console.log("Warning:", resp.warning);
+        }
         console.log(`Watch added: ${resp.watch}`);
         makeSubscription(client, resp.watch, resp.relative_path);
       },
