@@ -2,9 +2,9 @@
   "name": "ts-node-starter",
   "version": "1.0.0",
   "description": "Starter template for nodejs application using ts",
-  "main": "build/index.js",
+  "main": "dist/index.js",
   "homepage": "https://github.com/ViGi-P/ts-node-starter#README",
-  "repository": "git@github.com:ViGi-P/ts-node-starter.git",
+  "repository": "github:ViGi-P/ts-node-starter",
   "author": "Vignesh Prasad <mail@vigneshprasad.com> (https://vigneshprasad.com/)",
   "license": "MIT",
   "scripts": {
