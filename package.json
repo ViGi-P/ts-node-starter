@@ -14,8 +14,10 @@
   },
   "devDependencies": {
     "@types/fb-watchman": "2.0.0",
+    "@types/lodash.debounce": "4.0.6",
     "@types/node": "14.6.4",
     "fb-watchman": "2.0.0",
+    "lodash.debounce": "4.0.8",
     "ts-node": "9.0.0",
     "typedoc": "0.19.1",
     "typescript": "^4.0.0"

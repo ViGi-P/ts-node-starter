@@ -1,34 +1,40 @@
 import watchman from "fb-watchman";
-import { spawn } from "child_process";
+import debounce from "lodash.debounce";
+import { promisify } from "util";
+const spawn = promisify(require("child_process").exec);
 
 const client = new watchman.Client();
 const devServerSubscription = "dev_server_subscription";
 const devSubState = "dev_subscription_state";
-let isExecuting = false;
 let isCleaningUp = false;
 
-function devServerStart() {
-  const tsNode = spawn(
-    `${process.cwd()}/node_modules/.bin/ts-node`,
-    ["src/index.ts"],
-  );
+const devServerStart = debounce(async (resp: any) => {
+  devServerStart.cancel();
+  try {
+    const { stdout, stderr } = await spawn(
+      `${process.cwd()}/node_modules/.bin/ts-node src/index.ts`,
+    );
 
-  tsNode.stdout.on("data", (data) => {
-    if (isExecuting) process.stdout.write(`${data}`);
-  });
-
-  tsNode.stderr.on("data", (data) => {
-    console.error(`Stderr: ${data}`);
-  });
-
-  tsNode.on("close", (code) => {
-    if (isExecuting) {
-      console.log("\x1b[0m%s\x1b[0m", "");
-      console.log(`Exited with code ${code}`);
+    if (!resp.is_fresh_instance) {
+      console.log(
+        "\x1b[36m%s",
+        resp.files.filter((file: any) => file.type === "f").reduce(
+          (acc: string, next: any) => `${acc} ${next.name}`,
+          "Changed:",
+        ),
+      );
+    } else {
+      console.log("\x1b[36m%s", "Subscribed to file changes in ./src");
     }
-    isExecuting = false;
-  });
-}
+
+    console.log("\x1b[97m%s\x1b[37m", "");
+    if (stdout.length) process.stdout.write(stdout);
+    if (stderr.length) process.stderr.write(stderr);
+  } catch (error) {
+    console.error("error:", error);
+  }
+  console.log("\x1b[0m%s\x1b[0m", "");
+}, 1000);
 
 function makeSubscription(
   client: watchman.Client,
@@ -49,28 +55,14 @@ function makeSubscription(
         console.error("Failed to subscribe:", error);
         return;
       }
-      console.log(`Subscription added: ${resp.subscribe}`);
+      console.log(`Subscription added: ${resp.subscribe}\n`);
     },
   );
 
-  client.on("subscription", (resp) => {
+  client.on("subscription", (resp: any) => {
     if (resp.subscription !== devServerSubscription) return;
 
-    if (!resp.is_fresh_instance) {
-      if (!isExecuting) {
-        console.log("");
-        console.log("\x1b[36m%s", "Files changed. Restarting...");
-        console.log("\x1b[97m%s\x1b[37m", "");
-      }
-    } else {
-      console.log("Subscribed to file changes in ./src");
-      console.log("");
-      console.log("\x1b[36m%s", "Executing...");
-      console.log("\x1b[97m%s\x1b[37m", "");
-    }
-
-    isExecuting = true;
-    devServerStart();
+    devServerStart(resp);
   });
 }
 
