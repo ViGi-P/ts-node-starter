@@ -64,6 +64,7 @@ function makeSubscription(
       }
     } else {
       console.log("Subscribed to file changes in ./src");
+      console.log("");
       console.log("\x1b[36m%s", "Executing...");
       console.log("\x1b[97m%s\x1b[37m", "");
     }
@@ -131,6 +132,7 @@ client.capabilityCheck(
           return;
         }
 
+        process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");
         console.clear();
         if ("warning" in resp) {
           console.log("Warning:", resp.warning);
