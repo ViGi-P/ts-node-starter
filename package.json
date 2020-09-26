@@ -1,6 +1,6 @@
 {
   "name": "ts-node-starter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Starter template for nodejs application using ts",
   "main": "dist/index.js",
   "homepage": "https://github.com/ViGi-P/ts-node-starter#README",
@@ -8,18 +8,15 @@
   "author": "Vignesh Prasad <mail@vigneshprasad.com> (https://vigneshprasad.com/)",
   "license": "MIT",
   "scripts": {
-    "start": "NODE_ENV=development ./node_modules/.bin/ts-node devServer.ts",
-    "build": "rm -rf dist && ./node_modules/.bin/tsc",
+    "start": "NODE_ENV=development ./node_modules/.bin/fbw -t=src -r=\"npm run build\" -t=dist -r=\"node dist/index.js\"",
+    "build": "./node_modules/.bin/tsc",
     "docs": "./node_modules/.bin/typedoc"
   },
   "devDependencies": {
-    "@types/fb-watchman": "2.0.0",
-    "@types/lodash.debounce": "4.0.6",
     "@types/node": "14.6.4",
-    "fb-watchman": "2.0.0",
-    "lodash.debounce": "4.0.8",
-    "ts-node": "9.0.0",
+    "@vigi-p/fbw": "^2.1.6",
     "typedoc": "0.19.1",
     "typescript": "^4.0.0"
-  }
+  },
+  "dependencies": {}
 }
